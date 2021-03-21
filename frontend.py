@@ -4,11 +4,12 @@ import os
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
+from dash.dependencies import Input, Output, State, ClientsideFunction
+
 import matplotlib.pyplot as plt
 
 # %%
 pd.set_option.max_rows = 1000
-
 
 path = "./data/"
 tmp = pd.DataFrame()
@@ -50,16 +51,16 @@ CITY_20_Y = pd.DataFrame(np.array(PERIOD_20_Y).reshape(-1, 365)).T
 
 # %%
 df_desc = CITY_20_Y.T.describe()
-df_desc.head()
+# df_desc.head()
 
 # %%
-df_desc.loc['mean'].min(), df_desc.loc['mean'].max(), df_desc.shape
+# df_desc.loc['mean'].min(), df_desc.loc['mean'].max(), df_desc.shape
 
 # %%
 CITY_20_Y['mean'] = df_desc.loc['mean'].T
 
 # %%
-CITY_20_Y.head()
+# CITY_20_Y.head()
 
 # %%
 # CITY_20_Y['max'] = np.max(np.array(CITY_20_Y), axis = 1)
@@ -84,7 +85,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=42)
 # %%
 rf = RandomForestRegressor()
 rf.fit(X_train, y_train)
-rf.score(X_test, y_test)
+# rf.score(X_test, y_test)
 
 # %%
 prediction = rf.predict(X)
@@ -102,7 +103,8 @@ app = dash.Dash(__name__)
 # %%
 app.layout = html.Div(
     children=[
-        dcc.Dropdown(options=[{'label': i, 'value': i} for i in CITIES]),
+        dcc.Dropdown(options=[{'label': name, 'value': i} for i, name in enumerate(CITIES)],
+                     id='dropdown'),
         html.H1(children="Погода по городам", ),
         html.P(
             children="Анализ прогноза погоды"
@@ -119,11 +121,40 @@ app.layout = html.Div(
                 ],
                 "layout": {"title": "Город:"},
             },
+            id='graph'
         )
-    ]
+    ],
+    id='goddamn_div'
 )
 
 
-if __name__ == "__main__":
-    app.run_server(debug=False)
+@app.callback(Output('goddamn_div', 'children'), Input('dropdown', 'value'))
+def on_state_change(city):
+    if city is not None:
+        print(city)
+        return [dcc.Dropdown(options=[{'label': name, 'value': i} for i, name in enumerate(CITIES)],
+                             id='dropdown'),
+                html.H1(children="Погода по городам", ),
+                html.P(
+                    children="Анализ прогноза погоды"
+                    ,
+                ),
+                dcc.Graph(
+                    figure={
+                        "data": [
+                            {
+                                "x": df[city],
+                                "y": y,
+                                "type": "lines",
+                            },
+                        ],
+                        "layout": {"title": "Город: {}".format(CITIES[city])},
+                    },
+                    id='graph'
+                )]
+    else:
+        return [Output('goddamn_div', 'children')]
 
+
+if __name__ == "__main__":
+    app.run_server(debug=True)
