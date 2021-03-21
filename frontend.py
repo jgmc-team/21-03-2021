@@ -4,8 +4,7 @@ import os
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
-from dash.dependencies import Input, Output, State, ClientsideFunction
-
+from dash.dependencies import Input, Output
 import matplotlib.pyplot as plt
 
 # %%
@@ -110,21 +109,21 @@ app.layout = html.Div(
             children="Анализ прогноза погоды"
             ,
         ),
-        dcc.Graph(
-            figure={
-                "data": [
-                    {
-                        "x": df.index,
-                        "y": y,
-                        "type": "lines",
-                    },
-                ],
-                "layout": {"title": "Город:"},
-            },
-            id='graph'
-        )
-    ],
-    id='goddamn_div'
+        html.Div(id='goddamn_div',
+                 children=dcc.Graph(
+                     figure={
+                         "data": [
+                             {
+                                 "x": df.index,
+                                 "y": y,
+                                 "type": "lines",
+                             },
+                         ],
+                         "layout": {"title": "Город:"},
+                     },
+                     id='graph')
+                 )
+    ]
 )
 
 
@@ -132,19 +131,13 @@ app.layout = html.Div(
 def on_state_change(city):
     if city is not None:
         print(city)
-        return [dcc.Dropdown(options=[{'label': name, 'value': i} for i, name in enumerate(CITIES)],
-                             id='dropdown'),
-                html.H1(children="Погода по городам", ),
-                html.P(
-                    children="Анализ прогноза погоды"
-                    ,
-                ),
-                dcc.Graph(
+        print(df[city])
+        return [dcc.Graph(
                     figure={
                         "data": [
                             {
-                                "x": df[city],
-                                "y": y,
+                                "x": df.index,
+                                "y": df[city],
                                 "type": "lines",
                             },
                         ],
